@@ -1,13 +1,15 @@
-#define F_CPU 8000000UL
+#ifndef F_CPU
+	#define F_CPU 8000000UL
+#endif
 
 #include <avr/io.h>
 #include <stdint.h>
 
 #include "MySerial.h"
 
-void Serial_Begin(void) {
+void Serial_Begin(unsigned baud) {
 	UBRR0H = 0;
-	UBRR0L = SERIAL_9600_BOD_8MHZ;	/* 9600 BOD 8MHz */
+	UBRR0L = SERIAL_BAUD(baud);
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);	/* Enable receiver and transmitter */
 	UCSR0C = (3<<UCSZ00);			/* Set frame format: 8data, 1stop bit */
 }
@@ -41,7 +43,8 @@ void Serial_Write_char(uint8_t data) {
 void Num_Out(unsigned long num) {
 	if (num) { Num_Out(num / 10); Serial_Write_char((num % 10) + '0'); }
 }
-void Serial_Write_Num(unsigned long num) {
+void Serial_Write_Num(long num) {
+	if (num < 0) { Serial_Write_char('-'); num = -num; }
 	if (num) { Num_Out(num); return; }
 	Serial_Write_char('0');
 }
