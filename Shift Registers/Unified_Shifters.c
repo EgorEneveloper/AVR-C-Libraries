@@ -23,13 +23,14 @@ extern ShiftRegister NewRegister_595(volatile uint8_t* Reg_DDR, volatile uint8_t
 	
 	return Nreg;
 }
-extern ShiftRegister NewRegister_165(volatile uint8_t* Reg_DDR, volatile uint8_t* Reg_Port, volatile uint8_t* Reg_Pin, uint8_t mask_setState, uint8_t mask_clock, uint8_t mask_data) {
-	ShiftRegister Nreg = { Reg_DDR, Reg_Port, Reg_Pin, mask_setState, mask_clock, mask_data };
-	uint8_t setup_pins = mask_setState | mask_clock | mask_data;
+extern ShiftRegister NewRegister_165(volatile uint8_t* Reg_DDR, volatile uint8_t* Reg_Port, volatile uint8_t* Reg_Pin, uint8_t mask_ce, uint8_t mask_update, uint8_t mask_clock, uint8_t mask_data) {
+	ShiftRegister Nreg = { Reg_DDR, Reg_Port, Reg_Pin, mask_ce, mask_update, mask_clock, mask_data };
+	uint8_t setup_pins = mask_update | mask_clock | mask_data | mask_ce;
 	
 	*Reg_DDR |= setup_pins; 
 	*Reg_DDR &= ~mask_data;
 	*Reg_Port &= ~setup_pins;
+	*Reg_Port |= mask_ce;
 	
 	return Nreg;
 }
@@ -60,16 +61,18 @@ extern void Register595_Write(ShiftRegister* Register, uint8_t byte) {
 	}
 	*Register->Reg_Port |= Register->mask_Update;
 }
-extern uint8_t Register165_Read(ShiftRegister* Register) {
+extern void Register165_Read(ShiftRegister* Register, uint8_t* data_in, uint8_t amount) {
+	*Register->Reg_Port &= ~(Register->mask_CE);
 	*Register->Reg_Port |= Register->mask_Update;
-	uint8_t val = 0;
 	
-	for (uint8_t i = 0; i < 8; ++i) {
-		val <<= 1;
-		if (*Register->Reg_Pin & Register->mask_Data) { val |= 1; }
-		Register_Clock(Register);
+	for (uint8_t n = 0; n < amount; ++n) {
+		for (uint8_t i = 0; i < 8; ++i) {
+			data_in[n] >>= 1;
+			if (*Register->Reg_Pin & Register->mask_Data) { data_in[n] |= 0b10000000; }
+			Register_Clock(Register);
+		}
 	}
 	
 	*Register->Reg_Port &= ~Register->mask_Update;
-	return val;
+	*Register->Reg_Port |= Register->mask_CE;
 }
