@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "MyTWI.h"
+#include "TWI.h"
 #include "ADXL.h"
 
 uint8_t ADXL_dev_addr;

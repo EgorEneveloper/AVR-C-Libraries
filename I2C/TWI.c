@@ -3,13 +3,11 @@
 #endif
 
 #include <avr/io.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <util/delay.h>
-#include "MyTWI.h"
+#include "TWI.h"
 
 void TWI_Init(unsigned long int CPU_F, unsigned long int SCL_F){
-	TWBR = ( ( (CPU_F) / (SCL_F) - 16) / 2);
+	TWBR = ( ( (CPU_F) / (SCL_F) - 16) >> 1);
 	TWSR = 0;
 	TWCR |= (1 << TWEN);
 }
@@ -29,8 +27,8 @@ uint8_t TWI_WriteByte(uint8_t data){
 	TWCR = (1 << TWEN)|(1 << TWINT);
 	while(!(TWCR & (1 << TWINT)));
 	
-	if((TWSR & 0xF8) == 0x18 || (TWSR & 0xF8) == 0x28 ||(TWSR & 0xF8) == 0x40) { return true; } //if received
-	else { return false; } //if error
+	if((TWSR & 0xF8) == 0x18 || (TWSR & 0xF8) == 0x28 ||(TWSR & 0xF8) == 0x40) { return 1; } //if received
+	else { return 0; } //if error
 }
 uint8_t TWI_ReadByte(uint8_t *data, uint8_t ack){
 	if(ack)	{ TWCR |= (1 << TWEA); } //enable ack
@@ -39,8 +37,8 @@ uint8_t TWI_ReadByte(uint8_t *data, uint8_t ack){
 	TWCR |= (1 << TWINT);
 	while(!(TWCR & (1 << TWINT)));
 	
-	if((TWSR & 0xF8) == 0x58 || (TWSR & 0xF8) == 0x50){ *data = TWDR; return true; } //if data received
-	else { return false; }
+	if((TWSR & 0xF8) == 0x58 || (TWSR & 0xF8) == 0x50){ *data = TWDR; return 1; } //if data received
+	else { return 0; }
 }
 void TWI_WriteRegister(uint8_t addr, uint8_t reg, uint8_t val){
 	TWI_Start();
@@ -57,7 +55,7 @@ void TWI_ReadBytes(uint8_t dev_addr, uint8_t reg_addr, uint8_t num, uint8_t *buf
 	TWI_WriteByte(reg_addr);
 	
 	TWI_Start();
-	TWI_WriteByte((dev_addr << 1) + 1);
+	TWI_WriteByte((dev_addr << 1) | 1);
 	
 	while (num--) { TWI_ReadByte(buffer++, num); }
 	TWI_Stop();

@@ -12,7 +12,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#include "MyTWI.h"
+#include "TWI.h"
 #include "BMP180.h"
 
 static short dig_AC1;

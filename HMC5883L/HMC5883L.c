@@ -6,7 +6,7 @@
  */ 
 
 #include <inttypes.h>
-#include "MyTWI.h"
+#include "TWI.h"
 #include "HMC5883L.h"
 
 static int16_t HMC5883L_Measure(uint8_t MSB_Register_Axis) {
